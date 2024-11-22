@@ -39,3 +39,9 @@ export const deleteService = async (url) => {
     throw error;
   }
 };
+
+export const queryServices = async (params) => {
+  const query = new URLSearchParams(params).toString();
+  const response = await axiosInstance.get(`/services/query?${query}`);
+  return response;
+};

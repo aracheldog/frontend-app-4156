@@ -1,14 +1,24 @@
 import React, { useState } from "react";
 import useSWR from "swr";
-import { Table, Button, Modal, Form, Input, Spin, message } from "antd";
+import {
+  Table,
+  Button,
+  Modal,
+  Form,
+  Input,
+  Spin,
+  message,
+  Popconfirm,
+} from "antd";
 import { fetcher } from "../../api/fetcher";
-import { postService } from "../../api/serviceApi";
+import { postService, deleteService } from "../../api/serviceApi";
 
 const Categories = () => {
   const { data, error, isLoading, mutate } = useSWR(
     "/services/categories",
     fetcher
   );
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [form] = Form.useForm();
@@ -22,25 +32,69 @@ const Categories = () => {
     form.resetFields();
   };
 
-  // 提交新类别
-  const handleCreateCategory = async (values) => {
+  // Submit a new category
+  const handleCreateCategory = async () => {
     try {
       setIsSubmitting(true);
-      await postService("/services/categories", values);
+      const values = await form.validateFields(); // Explicitly validate and get form values
+      const { category_name } = values;
+      await postService(
+        `/services/categories/name/${encodeURIComponent(category_name)}`,
+        {}
+      );
       message.success("Category created successfully!");
-      mutate();
-      handleCloseModal(); // 关闭 Modal
+      mutate(); // Refresh categories list
+      handleCloseModal();
     } catch (error) {
-      message.error("Failed to create category.");
+      if (error.response?.status === 409) {
+        message.error("Category already exists.");
+      } else if (error.response?.status === 400) {
+        message.error("Invalid category name.");
+      } else {
+        message.error("Failed to create category.");
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // 定义表格列
+  // Delete a category
+  const handleDeleteCategory = async (category_name) => {
+    try {
+      await deleteService(
+        `/services/categories/name/${encodeURIComponent(category_name.trim())}`
+      );
+      message.success("Category deleted successfully!");
+      mutate(); // Refresh categories list
+    } catch (error) {
+      message.error("Failed to delete category.");
+    }
+  };
+
+  // Define table columns
   const columns = [
     { title: "ID", dataIndex: "id", key: "id" },
-    { title: "Category Name", dataIndex: "category_name", key: "name" },
+    {
+      title: "Category Name",
+      dataIndex: "category_name",
+      key: "category_name",
+    },
+    {
+      title: "Actions",
+      key: "actions",
+      render: (_, record) => (
+        <Popconfirm
+          title="Are you sure to delete this category?"
+          onConfirm={() => handleDeleteCategory(record.category_name)}
+          okText="Yes"
+          cancelText="No"
+        >
+          <Button type="link" danger>
+            Delete
+          </Button>
+        </Popconfirm>
+      ),
+    },
   ];
 
   return (
@@ -74,7 +128,7 @@ const Categories = () => {
           <Button
             key="submit"
             type="primary"
-            onClick={handleCreateCategory}
+            onClick={handleCreateCategory} // Use modal's button to trigger form submission
             loading={isSubmitting}
           >
             Submit
@@ -83,7 +137,6 @@ const Categories = () => {
       >
         <Form
           form={form}
-          onFinish={handleCreateCategory}
           layout="horizontal"
           labelCol={{ span: 6 }}
           wrapperCol={{ span: 18 }}
