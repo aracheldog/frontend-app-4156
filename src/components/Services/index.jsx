@@ -11,21 +11,24 @@ import {
   Select,
   Switch,
 } from "antd";
+import { useNavigate } from "react-router-dom";
 import { fetcher } from "../../api/fetcher";
 import CreateService from "./CreateService";
 import { deleteService, queryServices } from "../../api/serviceApi";
 
 const AllServices = () => {
-  const { data, error, isLoading, mutate } = useSWR("/services", fetcher); // Fetch services
+  const { data, error, isLoading, mutate } = useSWR("/services", fetcher);
   const { data: categories, error: categoryError } = useSWR(
     "/services/categories",
     fetcher
   );
-  const [isModalOpen, setIsModalOpen] = useState(false); // Control Modal visibility
-  const [editMode, setEditMode] = useState(false); // Track if editing
-  const [editingService, setEditingService] = useState(null); // Store the service being edited
-  const [queryResults, setQueryResults] = useState(null); // Store filtered results
-  const [isQueryLoading, setIsQueryLoading] = useState(false); // Loading state for queries
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [editingService, setEditingService] = useState(null);
+  const [queryResults, setQueryResults] = useState(null);
+  const [isQueryLoading, setIsQueryLoading] = useState(false);
+
+  const navigate = useNavigate(); // For navigation to detail page
 
   const handleOpenModal = (service = null) => {
     if (service) {
@@ -46,9 +49,9 @@ const AllServices = () => {
 
   const handleDeleteService = async (id) => {
     try {
-      await deleteService(`/services/${id}`); // API call to delete service
+      await deleteService(`/services/${id}`);
       message.success("Service deleted successfully!");
-      mutate(); // Refresh services list
+      mutate();
     } catch (error) {
       message.error("Failed to delete service.");
     }
@@ -57,20 +60,14 @@ const AllServices = () => {
   const handleQuery = async (values) => {
     try {
       setIsQueryLoading(true);
-
-      // Filter out undefined values from the query parameters
       const filteredValues = Object.fromEntries(
         Object.entries(values).filter(
           ([_, value]) => value !== undefined && value !== ""
         )
       );
 
-      const results = await queryServices({
-        ...filteredValues,
-        category: filteredValues.category.trim(),
-      });
-      console.log("query results: ", results);
-      setQueryResults(results); // Update the results
+      const results = await queryServices(filteredValues);
+      setQueryResults(results);
       message.success("Services filtered successfully!");
     } catch (error) {
       message.error("Failed to filter services.");
@@ -79,7 +76,6 @@ const AllServices = () => {
     }
   };
 
-  // Define table columns
   const columns = [
     { title: "ID", dataIndex: "id", key: "id" },
     { title: "Name", dataIndex: "name", key: "name" },
@@ -110,11 +106,16 @@ const AllServices = () => {
       title: "Actions",
       key: "actions",
       render: (_, record) => (
-        <span>
+        <div style={{ display: "flex", gap: "8px" }}>
+          <Button
+            type="link"
+            onClick={() => navigate(`/services/${record.id}`)} 
+          >
+            Detail
+          </Button>
           <Button
             type="link"
             onClick={() => handleOpenModal(record)} // Edit service
-            style={{ marginRight: 8 }}
           >
             Edit
           </Button>
@@ -128,7 +129,7 @@ const AllServices = () => {
               Delete
             </Button>
           </Popconfirm>
-        </span>
+        </div>
       ),
     },
   ];
@@ -139,11 +140,10 @@ const AllServices = () => {
       <Form
         layout="inline"
         onFinish={handleQuery}
-        initialValues={{
-          availability: true,
-        }}
+        initialValues={{ availability: true }}
         style={{ marginBottom: "16px" }}
       >
+        {/* Latitude and Longitude Filters */}
         <Form.Item
           label="Latitude"
           name="latitude"
@@ -188,6 +188,7 @@ const AllServices = () => {
           <Input placeholder="Enter longitude" />
         </Form.Item>
 
+        {/* Category and Availability Filters */}
         <Form.Item label="Category" name="category">
           <Select
             placeholder="Select category"
@@ -201,7 +202,6 @@ const AllServices = () => {
             ))}
           </Select>
         </Form.Item>
-
         <Form.Item
           label="Availability"
           name="availability"
@@ -209,7 +209,6 @@ const AllServices = () => {
         >
           <Switch />
         </Form.Item>
-
         <Form.Item>
           <Button type="primary" htmlType="submit">
             Filter
@@ -217,13 +216,16 @@ const AllServices = () => {
         </Form.Item>
       </Form>
 
+      {/* Create Service Button */}
       <Button
         type="primary"
-        onClick={() => handleOpenModal()} // Open modal for creating a new service
+        onClick={() => handleOpenModal()}
         style={{ marginBottom: 16 }}
       >
         Create New Service
       </Button>
+
+      {/* Table */}
       {isQueryLoading || isLoading ? (
         <Spin tip={isQueryLoading ? "Filtering..." : "Loading..."}>
           <Table dataSource={[]} columns={columns} rowKey="id" />
@@ -240,9 +242,7 @@ const AllServices = () => {
           dataSource={queryResults ?? data ?? []}
           columns={columns}
           rowKey="id"
-          locale={{
-            emptyText: "No services to display. Adjust your filters.",
-          }}
+          locale={{ emptyText: "No services to display. Adjust your filters." }}
         />
       )}
 
