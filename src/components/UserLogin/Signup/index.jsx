@@ -1,16 +1,18 @@
-import React from "react";
+import React, { useState } from "react";
 import { Form, Input, Button, message } from "antd";
 import { useNavigate } from "react-router-dom";
 import { postService } from "../../../api/serviceApi";
 
 const Register = () => {
   const navigate = useNavigate();
+  const [isSubmitting, setIsSubmitting] = useState(false); // Track loading state
 
   const handleRegister = async (values) => {
     try {
+      setIsSubmitting(true); // Start loading
       const { username, firstName, lastName, password, email, phone } = values;
 
-      // 调用注册 API
+      // Call the registration API
       await postService("/user/signup", {
         username,
         firstName,
@@ -21,12 +23,14 @@ const Register = () => {
       });
 
       message.success("Registration successful!");
-      navigate("/login"); // 注册成功后跳转到登录页面
+      navigate("/login"); // Redirect to login page
     } catch (error) {
       message.error(
         error.response?.data?.message ||
           "Registration failed. Please try again!"
       );
+    } finally {
+      setIsSubmitting(false); // Stop loading
     }
   };
 
@@ -114,8 +118,13 @@ const Register = () => {
         <Input.Password />
       </Form.Item>
       <Form.Item>
-        <Button type="primary" htmlType="submit" style={{ width: "100%" }}>
-          Register
+        <Button
+          type="primary"
+          htmlType="submit"
+          style={{ width: "100%" }}
+          loading={isSubmitting} 
+        >
+          {isSubmitting ? "Registering..." : "Register"}
         </Button>
       </Form.Item>
     </Form>

@@ -4,29 +4,34 @@ import { useAuth } from "../../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { postService } from "../../../api/serviceApi";
 
-
 const Login = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
   const [showResetPassword, setShowResetPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false); // Track loading state
 
   const handleLogin = async (values) => {
     try {
+      setIsSubmitting(true);
       const { username, password } = values;
 
       // Call login API
-      await postService("/user/login", { username, password }); 
+      let res = await postService("/user/login", { username, password });
+      console.log("res: ", res);
 
       // Mark the user as logged in
-      login();
+      login({ username });
       message.success("Login successful!");
       navigate("/services");
     } catch (error) {
       message.error(error.response?.data?.message || "Login failed!");
+    } finally {
+      setIsSubmitting(false); // Stop loading
     }
   };
 
   const handleResetPassword = async (values) => {
+    setIsSubmitting(true);
     try {
       const { username, newPassword } = values;
 
@@ -39,6 +44,8 @@ const Login = () => {
       message.error(
         error.response?.data?.message || "Failed to reset password!"
       );
+    } finally {
+      setIsSubmitting(false); // Stop loading
     }
   };
 
@@ -62,7 +69,12 @@ const Login = () => {
             <Input.Password />
           </Form.Item>
           <Form.Item>
-            <Button type="primary" htmlType="submit" style={{ width: "100%" }}>
+            <Button
+              type="primary"
+              htmlType="submit"
+              style={{ width: "100%" }}
+              loading={isSubmitting}
+            >
               Login
             </Button>
           </Form.Item>
@@ -103,6 +115,7 @@ const Login = () => {
             <Button
               type="primary"
               htmlType="submit"
+              loading={isSubmitting}
               style={{ width: "100%", marginBottom: 8 }}
             >
               Reset Password
