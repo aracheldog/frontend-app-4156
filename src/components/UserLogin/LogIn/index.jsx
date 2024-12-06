@@ -17,10 +17,9 @@ const Login = () => {
 
       // Call login API
       let res = await postService("/user/login", { username, password });
-      console.log("res: ", res);
 
       // Mark the user as logged in
-      login({ username });
+      login({ username, userId: res.userId });
       message.success("Login successful!");
       navigate("/services");
     } catch (error) {

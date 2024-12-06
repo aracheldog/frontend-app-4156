@@ -18,24 +18,34 @@ import { postService, deleteService } from "../../api/serviceApi";
 const ServiceDetail = () => {
   const { id } = useParams(); // Service ID
   const { data, error, isLoading } = useSWR(`/services/${id}`, fetcher); // Service details
-  const { data: feedbacks, error: feedbackError } = useSWR(
+  const { data: feedbackData, error: feedbackError } = useSWR(
     `/services/${id}/feedback`,
     fetcher
   ); // Feedback for the service
+  console.log(Array.isArray(feedbackData));
+  let feedbacks = Array.isArray(feedbackData) ? feedbackData : [];
+  
   const [isSubmitting, setIsSubmitting] = useState(false); // Feedback submission state
+  const [form] = Form.useForm(); // Ant Design form instance
+
+  let user = localStorage.getItem("user");
+  if (user) {
+    user = JSON.parse(user);
+  }
 
   // Handle feedback submission
   const handleFeedbackSubmit = async (values) => {
     try {
       setIsSubmitting(true);
       await postService("/services/feedback", {
-        service_id: id,
-        user_id: 1, // Example user ID (replace with the actual logged-in user's ID)
+        serviceId: Number(id),
+        userId: user.userId,
         rating: values.rating,
         comment: values.comment,
       });
       message.success("Feedback submitted successfully!");
       mutate(`/services/${id}/feedback`); // Refresh feedback list
+      form.resetFields(); // Clear the form fields
     } catch (error) {
       message.error(
         error.response?.data?.message || "Failed to submit feedback!"
@@ -96,10 +106,10 @@ const ServiceDetail = () => {
           {data.zipcode}
         </Descriptions.Item>
         <Descriptions.Item label="Contact Number" span={1}>
-          {data.contact_number}
+          {data.contactNumber}
         </Descriptions.Item>
         <Descriptions.Item label="Operation Hours" span={2}>
-          {data.operation_hour}
+          {data.operationHour}
         </Descriptions.Item>
         <Descriptions.Item label="Availability" span={2}>
           {data.availability ? "Available" : "Unavailable"}
@@ -115,7 +125,7 @@ const ServiceDetail = () => {
           <p>Error: {feedbackError.message || "Failed to load feedback."}</p>
         ) : (
           <List
-            dataSource={feedbacks || []}
+            dataSource={feedbacks ?? []}
             renderItem={(item) => (
               <List.Item
                 actions={[
@@ -132,22 +142,25 @@ const ServiceDetail = () => {
                 ]}
               >
                 <List.Item.Meta
-                  title={`Rating: ${item.rating} stars`}
+                  title={
+                    <div>
+                      <span>Rating: </span>
+                      <Rate disabled defaultValue={item.rating} />
+                    </div>
+                  }
                   description={item.comment}
                 />
                 <div>
-                  <small>By User ID: {item.user_id}</small>
-                  <br />
-                  <small>Updated at: {item.updated_at}</small>
+                  <small>By User ID: {item.userId}</small>
                 </div>
               </List.Item>
             )}
           />
         )}
-
         <h2 style={{ marginTop: 40 }}>Provide Your Feedback</h2>
         {/* Feedback Form */}
         <Form
+          form={form}
           onFinish={handleFeedbackSubmit}
           layout="vertical"
           style={{ marginTop: "20px" }}

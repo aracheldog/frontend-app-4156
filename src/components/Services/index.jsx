@@ -88,13 +88,13 @@ const AllServices = () => {
     { title: "Zipcode", dataIndex: "zipcode", key: "zipcode" },
     {
       title: "Contact Number",
-      dataIndex: "contact_number",
-      key: "contact_number",
+      dataIndex: "contactNumber",
+      key: "contactNumber",
     },
     {
       title: "Operation Hours",
-      dataIndex: "operation_hour",
-      key: "operation_hour",
+      dataIndex: "operationHour",
+      key: "operationHour",
     },
     {
       title: "Availability",
@@ -109,7 +109,7 @@ const AllServices = () => {
         <div style={{ display: "flex", gap: "8px" }}>
           <Button
             type="link"
-            onClick={() => navigate(`/services/${record.id}`)} 
+            onClick={() => navigate(`/services/${record.id}`)}
           >
             Detail
           </Button>

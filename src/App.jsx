@@ -18,9 +18,13 @@ import ServiceDetail from "./components/Services/ServiceDetail";
 const { Header, Content } = Layout;
 
 const App = () => {
+  const isProduction = window.location.hostname === "storage.googleapis.com";
+  const basename = isProduction ? "/byte-ai-chemist-frontend" : "/";
+  console.log("hello");
+  console.log(basename);
   return (
     <AuthProvider>
-      <Router>
+      <Router basename={basename}>
         <Layout>
           <Header>
             <NavigationMenu />

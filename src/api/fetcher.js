@@ -3,7 +3,7 @@ import axiosInstance from "./axiosInstance";
 export const fetcher = (url) =>
   axiosInstance.get(url).then((res) => {
     if (url === "/services/categories") {
-      let categories = res.split(",");
+      let categories = typeof res === "string" ? res.split(",") : [res];
       let categoriesObject = categories.map((category, idx) => {
         return { id: idx, category_name: category };
       });

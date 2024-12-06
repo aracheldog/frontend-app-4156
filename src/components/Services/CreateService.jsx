@@ -183,7 +183,7 @@ const CreateService = ({
         </Form.Item>
         <Form.Item
           label="Operation Hours"
-          name="operation_hour"
+          name="operationHour"
           rules={[
             { required: true, message: "Please enter the operation_hour!" },
             {
